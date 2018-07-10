@@ -30,7 +30,7 @@
 
   <script type="text/javascript" src="/js/three.js"></script>
   <script type="text/javascript" src="/js/OBJLoader.js"></script>
-  <script type="text/javascript" src="js/OrbitControls.js"></script>
+  <script type="text/javascript" src="/js/OrbitControls.js"></script>
   <script type="text/javascript" src="/js/SectionHelper.js"></script>
   <script type="text/javascript" src="/js/stats.min.js"></script>
   <script type="text/javascript" src="/js/dat.gui.min.js"></script>
@@ -169,6 +169,9 @@
       meshBox.material.needsUpdate = true
     }
 
+    // firebase
+    this.enableShootingMode = false;
+
   };
 
   var settings = new Settings();
@@ -214,6 +217,11 @@
     controls.autoRotate = false;
     controls.autoRotateSpeed = 0.2; // default is 2.0
 
+    gui.add(settings, 'enableShootingMode').onChange(function(enableShootingMode){
+      // firebase
+      console.log('GUI: enableShootingMode', enableShootingMode);
+      firebase.database().ref('enableShootingMode').set(enableShootingMode);
+    }).listen();
     // light
     directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.position.set(0, 1, 0);
@@ -417,6 +425,12 @@
     intensityRef.on('value', function(snapshot) {
       console.log('Firebase: light/intensity', snapshot.val());
       directionalLight.intensity = snapshot.val();
+    });
+
+    var enableShootingModeRef = firebase.database().ref('enableShootingMode');
+    enableShootingModeRef.on('value', function(snapshot) {
+      console.log('Firebase: enableShootingMode', snapshot.val());
+      settings.enableShootingMode = snapshot.val();
     });
 
     // debug
