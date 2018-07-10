@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>lightGhostARController</title>
+  <style>
+  body {
+    margin: 0;
+    overflow: hidden;
+  }
+
+  </style>
+</head>
+<body>
+
+  <!-- firebase -->
+  <script src="https://www.gstatic.com/firebasejs/5.2.0/firebase.js"></script>
+  <script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDHYzlkaWqxVBpLejpkpMQ7yjShZdVEONw",
+    authDomain: "lightghostar.firebaseapp.com",
+    databaseURL: "https://lightghostar.firebaseio.com",
+    projectId: "lightghostar",
+    storageBucket: "lightghostar.appspot.com",
+    messagingSenderId: "678263276889"
+  };
+  firebase.initializeApp(config);
+  </script>
+
+  <script type="text/javascript" src="/js/three.js"></script>
+  <script type="text/javascript" src="/js/OBJLoader.js"></script>
+  <script type="text/javascript" src="js/OrbitControls.js"></script>
+  <script type="text/javascript" src="/js/SectionHelper.js"></script>
+  <script type="text/javascript" src="/js/stats.min.js"></script>
+  <script type="text/javascript" src="/js/dat.gui.min.js"></script>
+  <script>
+
+  var Settings = function(){
+    // camera
+    this.cameraPosition = new THREE.Vector3(0, 1.5, 10.5);
+
+    // light
+    this.turnAllLightsOff = function (){
+      directionalLight.intensity = 0;
+      ambientLight.intensity = 0;
+    }
+
+    // mesh
+    this.isMeshVisible = true;
+    this.enableWireframe = false;
+
+    // clipping
+    this.clippingPlaneConstant = 0.8;
+    this.planeHelperVisible = false;
+
+    // dummy plane mesh
+    this.dummyPlaneMaterialOpacity = 1.0;
+
+    // debug sphere
+    this.debugSphereGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+
+    // points
+    this.isPointsVisible = true;
+
+    // gridHelper
+    this.isGridHelperVisible = false;
+
+    this.applyQuaternionOfBunnyToClippingPlaneAndBox = function (){
+      // to clipping plane
+      var objectMesh = scene.getObjectByName("bunnyMesh");
+      var normal = new THREE.Vector3();
+      normal.set(0, -1, 0).applyQuaternion(objectMesh.quaternion).normalize();
+      localPlane.normal.copy(normal);
+
+      // to box
+      meshBox.applyQuaternion(objectMesh.quaternion);
+    }
+
+    this.applyAxisAnglePositiveX = 0;
+    this.applyAxisAnglePositiveY = 0;
+    this.applyAxisAnglePositiveZ = 0;
+
+    // box
+    this.BOX_SIZE = 2.0;
+    this.isBoxInitiallyVisible = true;
+    this.initialBoxOpacity = 1.0;
+    this.colors = [
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xffff00),
+      new THREE.Color(0xff00ff),
+      new THREE.Color(0xff0000),
+      new THREE.Color(0x00ffff),
+      new THREE.Color(0x00ff00),
+      new THREE.Color(0x0000ff),
+      new THREE.Color(0x000000)
+    ];
+
+    this.boxOnRandomStatePositionRange = 5.0;
+    this.setBoxOnRandomState = function(){
+      meshBox.position.set(
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange,
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange,
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange
+      );
+
+      meshBox.rotateX(Math.random() * Math.PI * 2);
+      meshBox.rotateY(Math.random() * Math.PI * 2);
+      meshBox.rotateZ(Math.random() * Math.PI * 2);
+
+      dummyPlaneMesh.quaternion.copy(meshBox.quaternion);
+      dummyPlaneMesh.position.copy(meshBox.position);
+    }
+
+    this.addBoxOnRandomStateWithClippingPlane = function(){
+      var meshBoxClone = meshBox.clone();
+      meshBoxClone.material = meshBox.material.clone(); // have own material to have own clipping planes.
+      meshBoxClone.position.set(
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange,
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange,
+        (Math.random() * 2 - 1) * this.boxOnRandomStatePositionRange
+      );
+      meshBoxClone.rotateX(Math.random() * Math.PI * 2);
+      meshBoxClone.rotateY(Math.random() * Math.PI * 2);
+      meshBoxClone.rotateZ(Math.random() * Math.PI * 2);
+
+      scene.add(meshBoxClone);
+
+      var dummyPlaneMeshClone = dummyPlaneMesh.clone();
+      dummyPlaneMeshClone.material = dummyPlaneMesh.material.clone(); // have own material to have own color
+
+      var randomColor = Math.random() * 0xffffff << 0;
+      dummyPlaneMeshClone.material.color.setHex(randomColor);
+      dummyPlaneMeshClone.quaternion.copy(meshBoxClone.quaternion);
+      dummyPlaneMeshClone.position.copy(meshBoxClone.position);
+      scene.add(dummyPlaneMeshClone);
+
+      var localPlaneClone = new THREE.Plane();
+
+      var coplanarPointA = dummyPlaneMeshClone.geometry.vertices[0].clone().applyQuaternion(dummyPlaneMeshClone.quaternion).add(dummyPlaneMeshClone.position); // dummyPlaneMeshClone.localToWorld(dummyPlaneMeshClone.geometry.vertices[0])
+      var coplanarPointB = dummyPlaneMeshClone.geometry.vertices[1].clone().applyQuaternion(dummyPlaneMeshClone.quaternion).add(dummyPlaneMeshClone.position); // dummyPlaneMeshClone.localToWorld(dummyPlaneMeshClone.geometry.vertices[1])
+      var coplanarPointC = dummyPlaneMeshClone.geometry.vertices[2].clone().applyQuaternion(dummyPlaneMeshClone.quaternion).add(dummyPlaneMeshClone.position); // dummyPlaneMeshClone.localToWorld(dummyPlaneMeshClone.geometry.vertices[2])
+
+      function putDebugShere(positionArray, sphereColor){
+        for (var i = 0; i < positionArray.length; i++){
+          var debugSphereMaterial = new THREE.MeshPhongMaterial( { color: sphereColor } );
+          var debugSpehre = new THREE.Mesh(settings.debugSphereGeometry, debugSphereMaterial);
+          debugSpehre.position.copy(positionArray[i]);
+          scene.add(debugSpehre);
+        }
+      }
+
+      putDebugShere([coplanarPointA, coplanarPointC, coplanarPointB], randomColor);
+      localPlaneClone.setFromCoplanarPoints(coplanarPointA, coplanarPointC, coplanarPointB); // counter-clockwise
+
+      // helper to visualize the clipping plane
+      var planeHelper = new THREE.PlaneHelper(localPlaneClone, 10, 0xff0000);
+      planeHelper.visible = settings.planeHelperVisible;
+      scene.add(planeHelper);
+
+      meshBoxClone.material.clippingPlanes = [localPlaneClone];
+    }
+
+    this.useTextureLoader = function(){
+      let loader = new THREE.TextureLoader();
+      meshBox.material.map = loader.load("/img/lenna.png")
+      meshBox.material.needsUpdate = true
+    }
+
+  };
+
+  var settings = new Settings();
+  var gui = new dat.GUI({width: 300});
+
+  var scene, camera, renderer;
+  var directionalLight, ambientLight;
+  var localPlane;
+  var meshBox;
+  var dummyPlaneMesh;
+
+  // debug
+  var stats;
+
+  init();
+  animate();
+
+  function init(){
+    // scene
+    scene = new THREE.Scene();
+
+    // camera
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 1000);
+    camera.position.copy(settings.cameraPosition);
+
+    // renderer
+    renderer = new THREE.WebGLRenderer({
+      antialias: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.localClippingEnabled = true;
+
+    document.body.appendChild(renderer.domElement);
+
+    // OrbitControls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // - damping
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25; // default is 0.25
+    controls.zoomSpeed = 0.5; // default is 1
+    // - auto rotate
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.2; // default is 2.0
+
+    // light
+    directionalLight = new THREE.DirectionalLight(0xffffff);
+    directionalLight.position.set(0, 1, 0);
+    scene.add(directionalLight);
+    var guiFolderLight = gui.addFolder('Light');
+    guiFolderLight.add(directionalLight, 'intensity', 0, 10).name('directionalLight.intensity').step(0.01).onChange(function(intensity){
+      console.log('GUI: light.intensity', intensity);
+      firebase.database().ref('light/intensity').set(intensity);
+    }).listen();
+    guiFolderLight.open();
+
+    ambientLight = new THREE.AmbientLight(0x505050);
+    scene.add(ambientLight);
+    guiFolderLight.add(ambientLight, 'intensity', 0, 10).name('ambientLight.intensity').step(0.01).listen();
+
+    guiFolderLight.add(settings, 'turnAllLightsOff');
+
+    // dummy dummyPlaneMesh
+    var dummyPlaneGeometry = new THREE.PlaneGeometry(5, 5, 1, 1);
+    var dummyPlaneMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: settings.dummyPlaneMaterialOpacity,
+      wireframe: true,
+      color: 0x00ff00,
+      side: THREE.DoubleSide
+    });
+    dummyPlaneMesh = new THREE.Mesh(dummyPlaneGeometry, dummyPlaneMaterial);
+    scene.add(dummyPlaneMesh);
+
+    // clipping
+    localPlane = new THREE.Plane();
+    localPlane.normal.copy(dummyPlaneMesh.geometry.faces[0].normal);
+
+    var guiFolderPlane = gui.addFolder('Clipping Plane');
+    guiFolderPlane.add(renderer, 'localClippingEnabled');
+    guiFolderPlane.add(localPlane.normal, 'x').name("normal.x").step(0.01).listen();
+    guiFolderPlane.add(localPlane.normal, 'y').name("normal.y").step(0.01).listen();
+    guiFolderPlane.add(localPlane.normal, 'z').name("normal.z").step(0.01).listen();
+    guiFolderPlane.add(localPlane, 'constant').step(0.01).listen();
+    // helper to visualize the clipping plane
+    var planeHelper = new THREE.PlaneHelper(localPlane, 10, 0xffff00);
+    planeHelper.visible = settings.planeHelperVisible;
+    scene.add(planeHelper);
+    // axes
+    var axesHelperPlaneHelper = new THREE.AxesHelper(1);
+    planeHelper.add(axesHelperPlaneHelper);
+
+    // box
+    var geometryBox = new THREE.BoxGeometry(settings.BOX_SIZE, settings.BOX_SIZE, settings.BOX_SIZE);
+    var faceIndices = ['a', 'b', 'c'];
+    for (var i = 0; i < geometryBox.faces.length; i++) {
+      var f  = geometryBox.faces[i];
+      for (var j = 0; j < 3; j++) {
+        var vertexIndex = f[faceIndices[j]];
+        f.vertexColors[j] = settings.colors[vertexIndex];
+      }
+    }
+    var materialBox = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: settings.initialBoxOpacity,
+      vertexColors: THREE.VertexColors,
+    });
+    meshBox = new THREE.Mesh(geometryBox, materialBox);
+    meshBox.material.clippingPlanes = [localPlane];
+    scene.add(meshBox);
+    meshBox.visible = settings.isBoxInitiallyVisible;
+
+    // - gui
+    var guiFolderBox = gui.addFolder('Box');
+    guiFolderBox.add(meshBox.rotation, 'x').step(0.01).name('rotation.x');
+    guiFolderBox.add(meshBox.rotation, 'y').step(0.01).name('rotation.y');
+    guiFolderBox.add(meshBox.rotation, 'z').step(0.01).name('rotation.z');
+    guiFolderBox.add(meshBox, 'visible');
+    guiFolderBox.add(materialBox, 'opacity');
+    guiFolderBox.add(settings, 'setBoxOnRandomState');
+    guiFolderBox.add(settings, 'addBoxOnRandomStateWithClippingPlane');
+    guiFolderBox.add(settings, 'useTextureLoader');
+    guiFolderBox.open();
+
+    // instantiate a loader
+    var loaderOBJ = new THREE.OBJLoader();
+    console.log(loaderOBJ.isPoint);
+
+    // load a resource
+    loaderOBJ.load(
+      // resource URL
+      '/model/bunny_superLow.obj',
+      // called when resource is loaded
+      function (object) {
+        object.traverse(function (child){
+          if (child instanceof THREE.Mesh){ // child is mesh
+            // mesh bunny
+            child.position.set(0, 0, 0);
+            child.name = "bunnyMesh"; // object is Group, not mesh.
+            child.visible = settings.isMeshVisible;
+            scene.add(child);
+            // - gui
+            guiFolderMesh.add(child.quaternion, 'x').name('quaternion.x').step(0.01);
+            guiFolderMesh.add(child.quaternion, 'y').name('quaternion.y').step(0.01);
+            guiFolderMesh.add(child.quaternion, 'z').name('quaternion.z').step(0.01);
+            guiFolderMesh.add(child.quaternion, 'w').name('quaternion.w').step(0.01);
+            guiFolderMesh.add(settings, 'applyQuaternionOfBunnyToClippingPlaneAndBox');
+
+            var guiFolderApplyAxis = gui.addFolder('applyAxisAngle');
+            guiFolderApplyAxis.add(settings, 'applyAxisAnglePositiveX', 0, Math.PI * 2).step(0.01).onChange(applyAxisAngleToClippingPlane);
+            guiFolderApplyAxis.add(settings, 'applyAxisAnglePositiveY', 0, Math.PI * 2).step(0.01).onChange(applyAxisAngleToClippingPlane);
+            guiFolderApplyAxis.add(settings, 'applyAxisAnglePositiveZ', 0, Math.PI * 2).step(0.01).onChange(applyAxisAngleToClippingPlane);
+
+            function applyAxisAngleToClippingPlane(){
+              var normal = new THREE.Vector3(0, -1, 0);
+              normal.applyAxisAngle(new THREE.Vector3(1, 0, 0), settings.applyAxisAnglePositiveX);
+              normal.applyAxisAngle(new THREE.Vector3(0, 1, 0), settings.applyAxisAnglePositiveY);
+              normal.applyAxisAngle(new THREE.Vector3(0, 0, 1), settings.applyAxisAnglePositiveZ);
+              localPlane.normal.copy(normal);
+            }
+
+            // buddy for cross section
+            var sectionHelper = new THREE.SectionHelper(child, 0xffffff);
+            scene.add(sectionHelper);
+
+            // material(MeshPhongMaterial) for bunnyMesh
+            child.material.wireframe = settings.enableWireframe;
+
+            // clipping
+            child.material.clippingPlanes = [localPlane];
+            child.material.clipShadows = true;
+
+            sectionHelper.material.clippingPlanes = [localPlane];
+            sectionHelper.material.clipShadows = true;
+
+
+            // points bunny
+            var pointsMaterial = new THREE.PointsMaterial( {
+              color: 0xFF0000,
+              size: 0.005,
+              blending: THREE.AdditiveBlending,
+              transparent: true,
+              sizeAttenuation: true
+            } );
+            var points = new THREE.Points(child.geometry, pointsMaterial);
+            points.position.set(0, 0, 0);
+            points.name = "bunnyPoints";
+            points.visible = settings.isPointsVisible;
+            scene.add(points);
+
+            var guiFolderPoints = gui.addFolder('Points');
+            guiFolderPoints.add(points, 'visible');
+          }
+        });
+
+      },
+      // called when loading is in progresses
+      function (xhr) {
+        console.log((xhr.loaded/xhr.total * 100) + '% loaded');
+      },
+      // called when loading has errors
+      function (error) {
+        console.log('An error happened');
+      }
+    );
+
+    // GridHelper
+    var size = 10;
+    var divisions = 10;
+    var gridHelper = new THREE.GridHelper(size, divisions);
+    gridHelper.name = "gridHelper";
+    gridHelper.visible = settings.isGridHelperVisible;
+    scene.add(gridHelper);
+
+    // gui
+    // - mesh
+    var guiFolderMesh = gui.addFolder('Mesh');
+    guiFolderMesh.add(settings, 'isMeshVisible').onChange(guiIsMeshVisibleChanged);
+    function guiIsMeshVisibleChanged(){
+      var objectMesh = scene.getObjectByName("bunnyMesh");
+      objectMesh.visible = settings.isMeshVisible;
+    }
+
+    guiFolderMesh.add(settings, 'enableWireframe').onChange(guiEnableWireframeChanged);
+    function guiEnableWireframeChanged(){
+      var object = scene.getObjectByName("bunnyMesh");
+
+      object.traverse(function (child){
+        if (child instanceof THREE.Mesh){
+          child.material.wireframe = settings.enableWireframe;
+        }
+      });
+
+    };
+
+    // - planeHelper
+    var guiFolderPlaneHelper = gui.addFolder('planeHelper');
+    guiFolderPlaneHelper.add(planeHelper, 'visible');
+
+    // - gridHelper
+    var guiFolderGridHelper = gui.addFolder('GridHelper');
+    guiFolderGridHelper.add(gridHelper, 'visible');
+
+    // firebase
+    var intensityRef = firebase.database().ref('light/intensity');
+    intensityRef.on('value', function(snapshot) {
+      console.log('Firebase: light/intensity', snapshot.val());
+      directionalLight.intensity = snapshot.val();
+    });
+
+    // debug
+    stats = new Stats();
+    stats.showPanel(0);
+    document.body.appendChild(stats.dom);
+
+  }
+
+  function animate() {
+    stats.begin();
+    controls.update();
+    renderer.render(scene, camera);
+    stats.end();
+  	requestAnimationFrame(animate);
+  }
+
+  </script>
+</body>
+</html>
