@@ -177,6 +177,8 @@
   animate();
 
   function init(){
+    window.addEventListener('resize', onWindowResize, false);
+
     // scene
     scene = new THREE.Scene();
 
@@ -448,6 +450,13 @@
     stats.end();
   	requestAnimationFrame(animate);
   }
+
+  function onWindowResize () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
 
   </script>
 </body>
