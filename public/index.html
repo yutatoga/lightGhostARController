@@ -126,7 +126,7 @@
       meshBoxClone.rotateY(Math.random() * Math.PI * 2);
       meshBoxClone.rotateZ(Math.random() * Math.PI * 2);
 
-      scene.add(meshBoxClone);
+      meshBoxGroup.add(meshBoxClone);
 
       var dummyPlaneMeshClone = dummyPlaneMesh.clone();
       dummyPlaneMeshClone.quaternion.copy(meshBoxClone.quaternion);
@@ -166,7 +166,7 @@
   var scene, camera, renderer;
   var directionalLight, ambientLight;
   var localPlane;
-  var meshBox;
+  var meshBox, meshBoxGroup;
   var dummyPlaneMesh;
 
   // debug
@@ -272,8 +272,11 @@
     });
     meshBox = new THREE.Mesh(geometryBox, materialBox);
     meshBox.material.clippingPlanes = [localPlane];
-    scene.add(meshBox);
     meshBox.visible = settings.isBoxInitiallyVisible;
+
+    meshBoxGroup = new THREE.Group();
+    scene.add(meshBoxGroup);
+    meshBoxGroup.add(meshBox);
 
     // - gui
     var guiFolderBox = gui.addFolder('Box');
@@ -419,9 +422,11 @@
       settings.enableShootingMode = snapshot.val();
       if(snapshot.val()){
         // shooting mode
+        meshBoxGroup.visible = false;
         dummyPlaneMesh.material.visible = false;
       }else{
         // debug mode
+        meshBoxGroup.visible = true;
         dummyPlaneMesh.material.visible = true;
       }
     });
