@@ -431,6 +431,13 @@
     enableShootingModeRef.on('value', function(snapshot) {
       console.log('Firebase: enableShootingMode', snapshot.val());
       settings.enableShootingMode = snapshot.val();
+      if(snapshot.val()){
+        // shooting mode
+        dummyPlaneMesh.material.visible = false;
+      }else{
+        // debug mode
+        dummyPlaneMesh.material.visible = true;
+      }
     });
 
     // debug
