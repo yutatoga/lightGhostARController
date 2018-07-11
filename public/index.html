@@ -12,6 +12,7 @@
   </style>
 </head>
 <body>
+  <div id="containerStats"></div>
 
   <!-- firebase -->
   <script src="https://www.gstatic.com/firebasejs/5.2.0/firebase.js"></script>
@@ -424,17 +425,19 @@
         // shooting mode
         meshBoxGroup.visible = false;
         dummyPlaneMesh.material.visible = false;
+        document.getElementById("containerStats").style.display = "none";
       }else{
         // debug mode
         meshBoxGroup.visible = true;
         dummyPlaneMesh.material.visible = true;
+        document.getElementById("containerStats").style.display = "inline";
       }
     });
 
     // debug
     stats = new Stats();
     stats.showPanel(0);
-    document.body.appendChild(stats.dom);
+    document.getElementById('containerStats').appendChild(stats.dom);
 
   }
 
