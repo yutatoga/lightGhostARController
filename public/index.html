@@ -129,10 +129,6 @@
       scene.add(meshBoxClone);
 
       var dummyPlaneMeshClone = dummyPlaneMesh.clone();
-      dummyPlaneMeshClone.material = dummyPlaneMesh.material.clone(); // have own material to have own color
-
-      var randomColor = Math.random() * 0xffffff << 0;
-      dummyPlaneMeshClone.material.color.setHex(randomColor);
       dummyPlaneMeshClone.quaternion.copy(meshBoxClone.quaternion);
       dummyPlaneMeshClone.position.copy(meshBoxClone.position);
       scene.add(dummyPlaneMeshClone);
@@ -143,16 +139,6 @@
       var coplanarPointB = dummyPlaneMeshClone.geometry.vertices[1].clone().applyQuaternion(dummyPlaneMeshClone.quaternion).add(dummyPlaneMeshClone.position); // dummyPlaneMeshClone.localToWorld(dummyPlaneMeshClone.geometry.vertices[1])
       var coplanarPointC = dummyPlaneMeshClone.geometry.vertices[2].clone().applyQuaternion(dummyPlaneMeshClone.quaternion).add(dummyPlaneMeshClone.position); // dummyPlaneMeshClone.localToWorld(dummyPlaneMeshClone.geometry.vertices[2])
 
-      function putDebugShere(positionArray, sphereColor){
-        for (var i = 0; i < positionArray.length; i++){
-          var debugSphereMaterial = new THREE.MeshPhongMaterial( { color: sphereColor } );
-          var debugSpehre = new THREE.Mesh(settings.debugSphereGeometry, debugSphereMaterial);
-          debugSpehre.position.copy(positionArray[i]);
-          scene.add(debugSpehre);
-        }
-      }
-
-      putDebugShere([coplanarPointA, coplanarPointC, coplanarPointB], randomColor);
       localPlaneClone.setFromCoplanarPoints(coplanarPointA, coplanarPointC, coplanarPointB); // counter-clockwise
 
       // helper to visualize the clipping plane
