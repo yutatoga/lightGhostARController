@@ -192,7 +192,6 @@
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.localClippingEnabled = true;
 
     document.body.appendChild(renderer.domElement);
 
@@ -211,6 +210,13 @@
       console.log('GUI: enableShootingMode', enableShootingMode);
       firebase.database().ref('enableShootingMode').set(enableShootingMode);
     }).listen();
+
+    gui.add(renderer, 'localClippingEnabled').onChange(function(localClippingEnabled){
+      // firebase
+      console.log('GUI: localClippingEnabled', localClippingEnabled);
+      firebase.database().ref('localClippingEnabled').set(localClippingEnabled);
+    }).listen();
+
     // light
     directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.position.set(0, 1, 0);
@@ -413,6 +419,12 @@
     guiFolderGridHelper.add(gridHelper, 'visible');
 
     // firebase
+    var localClippingEnabledRef = firebase.database().ref('localClippingEnabled');
+    localClippingEnabledRef.on('value', function(snapshot) {
+      console.log('Firebase: localClippingEnabled', snapshot.val());
+      renderer.localClippingEnabled = snapshot.val();
+    });
+
     var intensityRef = firebase.database().ref('light/intensity');
     intensityRef.on('value', function(snapshot) {
       console.log('Firebase: light/intensity', snapshot.val());
