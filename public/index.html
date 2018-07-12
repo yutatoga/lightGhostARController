@@ -432,6 +432,12 @@
       renderer.localClippingEnabled = snapshot.val();
     });
 
+    var pushRatioRef = firebase.database().ref('pushRatio');
+    pushRatioRef.on('value', function(snapshot) {
+      console.log('Firebase: pushRatioRef', snapshot.val());
+      settings.pushRatio = snapshot.val();
+    });
+
     var intensityRef = firebase.database().ref('light/intensity');
     intensityRef.on('value', function(snapshot) {
       console.log('Firebase: light/intensity', snapshot.val());
