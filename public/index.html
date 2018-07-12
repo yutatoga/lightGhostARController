@@ -158,6 +158,7 @@
 
     // firebase
     this.enableShootingMode = false;
+    this.pushRatio = 0.125;
 
   };
 
@@ -215,6 +216,12 @@
       // firebase
       console.log('GUI: localClippingEnabled', localClippingEnabled);
       firebase.database().ref('localClippingEnabled').set(localClippingEnabled);
+    }).listen();
+
+    gui.add(settings, 'pushRatio').onChange(function(pushRatio){
+      // firebase
+      console.log('GUI: pushRatio', pushRatio);
+      firebase.database().ref('pushRatio').set(pushRatio);
     }).listen();
 
     // light
